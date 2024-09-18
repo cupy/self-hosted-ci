@@ -14,6 +14,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
+          console.log(JSON.stringify(context.payload, null, 2));
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
