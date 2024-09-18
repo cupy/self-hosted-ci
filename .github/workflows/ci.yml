@@ -1,14 +1,14 @@
+name: CI
 on:
   repository_dispatch:
-    types: [rocm-ci]
 
 env:
   SOURCE_REPO_OWNER: 'cupy'
-  SOURCE_REPO_NAME: 'test-repo-dispatch'  # XXX
+  SOURCE_REPO_NAME: 'cupy'
 
 jobs:
   test:
-    runs-on: ubuntu-latest  # XXX
+    runs-on: pg01-rocm
     env:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
     steps:
@@ -18,7 +18,7 @@ jobs:
         script: |
           core.info(`Triggered by: ${ context.payload.client_payload.url }`);
 
-    - name: Generate Token (Pending)
+    - name: Generate Token (Pre)
       id: generate-token-pre
       uses: actions/create-github-app-token@v1
       with:
@@ -27,7 +27,7 @@ jobs:
         owner: ${{ env.SOURCE_REPO_OWNER }}
         repositories: ${{ env.SOURCE_REPO_NAME }}
 
-    - name: Update Commit Status (Pending)
+    - name: Update Commit Status (Pre)
       uses: actions/github-script@v7
       with:
         github-token: ${{ steps.generate-token-pre.outputs.token }}
@@ -37,8 +37,8 @@ jobs:
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.head_sha,
             state: 'pending',
-            target_url: process.env.RUN_URL,
             description: 'In progress',
+            target_url: process.env.RUN_URL,
             context: context.payload.action,
           })
 
@@ -49,10 +49,13 @@ jobs:
         ref: ${{ github.event.client_payload.merge_commit_sha || github.event.client_payload.head_sha }}
         submodules: recursive
     
-    - run: sleep 300
+    - name: Test
+      id: test
+      run: |
+        ./.pfnci/linux/run.sh "${{ github.event.action }}" build test
 
     # Regenerate the token as the installation token expires in an hour.
-    - name: Generate Token (Success/Failure)
+    - name: Generate Token (Post)
       if: ${{ always() }}
       id: generate-token-post
       uses: actions/create-github-app-token@v1
@@ -62,9 +65,9 @@ jobs:
         owner: ${{ env.SOURCE_REPO_OWNER }}
         repositories: ${{ env.SOURCE_REPO_NAME }}
 
-    - name: Update Commit Status (Success)
+    - name: Update Commit Status (Post)
       uses: actions/github-script@v7
-      if: ${{ success() }}
+      if: ${{ always() }}
       with:
         github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
@@ -72,24 +75,8 @@ jobs:
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.head_sha,
-            state: 'success',
+            state: '${{ steps.test.outcome == 'success' && 'success' || 'failure' }}',
+            description: '${{ steps.test.outcome == 'success' && 'Successful' || 'Failed' }}',
             target_url: process.env.RUN_URL,
-            description: 'Successful',
-            context: context.payload.action,
-          })
-
-    - name: Update Commit Status (Failure)
-      uses: actions/github-script@v7
-      if: ${{ !success() }}
-      with:
-        github-token: ${{ steps.generate-token-post.outputs.token }}
-        script: |
-          github.rest.repos.createCommitStatus({
-            owner: process.env.SOURCE_REPO_OWNER,
-            repo: process.env.SOURCE_REPO_NAME,
-            sha: context.payload.client_payload.head_sha,
-            state: 'failure',
-            target_url: process.env.RUN_URL,
-            description: 'Failed',
             context: context.payload.action,
           })
