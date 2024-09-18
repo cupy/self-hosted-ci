@@ -17,15 +17,17 @@ jobs:
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
-            sha: inputs.sha,
+            sha: context.payload.client_payload.sha,
             state: 'pending',
-            context: inputs.action,
+            context: context.payload.action,
             description: 'In progress'
           })
 
     - name: 'Checkout'
       uses: actions/checkout@v4
       with:
+        repository: ${{ env.SOURCE_REPO_OWNER }}/${{ env.SOURCE_REPO_NAME }}
+        ref: ${{ github.event.client_payload.sha }}
         submodules: recursive
     
     - run: sleep 300
@@ -38,9 +40,9 @@ jobs:
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
-            sha: inputs.sha,
+            sha: context.payload.client_payload.sha,
             state: 'success',
-            context: inputs.action,
+            context: context.payload.action,
             description: 'Successful'
           })
 
@@ -52,8 +54,8 @@ jobs:
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
-            sha: inputs.sha,
+            sha: context.payload.client_payload.sha,
             state: 'failure',
-            context: inputs.action,
+            context: context.payload.action,
             description: 'Failed'
           })
