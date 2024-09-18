@@ -3,8 +3,8 @@ on:
     types: [rocm-ci]
 
 env:
-  REPO_OWNER: 'kmaehashi'  # XXX
-  REPO_NAME: 'test-repo-dispatch'  # XXX
+  SOURCE_REPO_OWNER: 'kmaehashi'  # XXX
+  SOURCE_REPO_NAME: 'test-repo-dispatch'  # XXX
 
 jobs:
   test:
@@ -14,9 +14,9 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          github.repos.createCommitStatus({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
+          github.rest.repos.createCommitStatus({
+            owner: process.env.SOURCE_REPO_OWNER,
+            repo: process.env.SOURCE_REPO_NAME,
             sha: inputs.sha,
             state: 'pending',
             context: inputs.action,
@@ -35,9 +35,9 @@ jobs:
       if: success()
       with:
         script: |
-          github.repos.createCommitStatus({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
+          github.rest.repos.createCommitStatus({
+            owner: process.env.SOURCE_REPO_OWNER,
+            repo: process.env.SOURCE_REPO_NAME,
             sha: inputs.sha,
             state: 'success',
             context: inputs.action,
@@ -49,9 +49,9 @@ jobs:
       if: failure()
       with:
         script: |
-          github.repos.createCommitStatus({
-            owner: process.env.REPO_OWNER,
-            repo: process.env.REPO_NAME,
+          github.rest.repos.createCommitStatus({
+            owner: process.env.SOURCE_REPO_OWNER,
+            repo: process.env.SOURCE_REPO_NAME,
             sha: inputs.sha,
             state: 'failure',
             context: inputs.action,
