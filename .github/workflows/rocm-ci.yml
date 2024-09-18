@@ -3,7 +3,7 @@ on:
     types: [rocm-ci]
 
 env:
-  SOURCE_REPO_OWNER: 'kmaehashi'  # XXX
+  SOURCE_REPO_OWNER: 'cupy'
   SOURCE_REPO_NAME: 'test-repo-dispatch'  # XXX
 
 jobs:
