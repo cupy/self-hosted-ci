@@ -10,9 +10,19 @@ jobs:
   test:
     runs-on: ubuntu-latest  # XXX
     steps:
+    - name: Generate Token (Pending)
+      id: generate-token-pre
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ vars.GH_APP_SELF_HOSTED_CI_ID }}
+        private-key: ${{ secrets.GH_APP_SELF_HOSTED_CI_PEM }}
+        owner: ${{ env.SOURCE_REPO_OWNER }}
+        repositories: ${{ env.SOURCE_REPO_NAME }}
+
     - name: 'Update Commit Status (Pending)'
       uses: actions/github-script@v7
       with:
+        github-token: ${{ steps.generate-token-pre.outputs.token }}
         script: |
           console.log(JSON.stringify(context.payload, null, 2));
           github.rest.repos.createCommitStatus({
@@ -33,10 +43,21 @@ jobs:
     
     - run: sleep 300
 
+    - name: Generate Token (Success/Failure)
+      if: always()
+      id: generate-token-post
+      uses: actions/create-github-app-token@v1
+      with:
+        app-id: ${{ vars.GH_APP_SELF_HOSTED_CI_ID }}
+        private-key: ${{ secrets.GH_APP_SELF_HOSTED_CI_PEM }}
+        owner: ${{ env.SOURCE_REPO_OWNER }}
+        repositories: ${{ env.SOURCE_REPO_NAME }}
+
     - name: 'Update Commit Status (Success)'
       uses: actions/github-script@v7
       if: success()
       with:
+        github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
@@ -51,6 +72,7 @@ jobs:
       uses: actions/github-script@v7
       if: failure()
       with:
+        github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
