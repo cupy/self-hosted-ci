@@ -32,7 +32,7 @@ jobs:
             sha: context.payload.client_payload.sha,
             state: 'pending',
             target_url: process.env.RUN_URL,
-            description: 'In progress'
+            description: 'In progress',
             context: context.payload.action,
           })
 
@@ -45,6 +45,7 @@ jobs:
     
     - run: sleep 300
 
+    # Regenerate the token as the installation token expires in an hour.
     - name: Generate Token (Success/Failure)
       if: always()
       id: generate-token-post
