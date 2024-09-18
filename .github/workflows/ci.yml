@@ -1,4 +1,4 @@
-name: CI
+name: Self-Hosted CI
 on:
   repository_dispatch:
 
