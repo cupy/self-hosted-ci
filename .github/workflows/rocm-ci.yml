@@ -9,6 +9,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest  # XXX
+    env:
+      RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
     steps:
     - name: Generate Token (Pending)
       id: generate-token-pre
@@ -24,14 +26,14 @@ jobs:
       with:
         github-token: ${{ steps.generate-token-pre.outputs.token }}
         script: |
-          console.log(JSON.stringify(context.payload, null, 2));
           github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.sha,
             state: 'pending',
-            context: context.payload.action,
+            target_url: process.env.RUN_URL,
             description: 'In progress'
+            context: context.payload.action,
           })
 
     - name: 'Checkout'
@@ -64,8 +66,9 @@ jobs:
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.sha,
             state: 'success',
+            target_url: process.env.RUN_URL,
+            description: 'Successful',
             context: context.payload.action,
-            description: 'Successful'
           })
 
     - name: 'Update Commit Status (Failure)'
@@ -79,6 +82,7 @@ jobs:
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.sha,
             state: 'failure',
+            target_url: process.env.RUN_URL,
+            description: 'Failed',
             context: context.payload.action,
-            description: 'Failed'
           })
