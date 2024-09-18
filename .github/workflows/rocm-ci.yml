@@ -47,7 +47,7 @@ jobs:
 
     # Regenerate the token as the installation token expires in an hour.
     - name: Generate Token (Success/Failure)
-      if: always()
+      if: ${{ always() }}
       id: generate-token-post
       uses: actions/create-github-app-token@v1
       with:
@@ -58,7 +58,7 @@ jobs:
 
     - name: 'Update Commit Status (Success)'
       uses: actions/github-script@v7
-      if: success()
+      if: ${{ success() }}
       with:
         github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
@@ -74,7 +74,7 @@ jobs:
 
     - name: 'Update Commit Status (Failure)'
       uses: actions/github-script@v7
-      if: !success()
+      if: ${{ !success() }}
       with:
         github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
