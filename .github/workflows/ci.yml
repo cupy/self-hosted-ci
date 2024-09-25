@@ -48,7 +48,7 @@ jobs:
         repository: ${{ env.SOURCE_REPO_OWNER }}/${{ env.SOURCE_REPO_NAME }}
         ref: ${{ github.event.client_payload.merge_commit_sha || github.event.client_payload.head_sha }}
         submodules: recursive
-    
+
     - name: Test
       id: test
       run: |
@@ -75,8 +75,8 @@ jobs:
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
             sha: context.payload.client_payload.head_sha,
-            state: '${{ steps.test.outcome == 'success' && 'success' || 'failure' }}',
-            description: '${{ steps.test.outcome == 'success' && 'Successful' || 'Failed' }}',
+            state: "${{ steps.test.outcome == 'success' && 'success' || 'failure' }}",
+            description: "${{ steps.test.outcome == 'success' && 'Successful' || 'Failed' }}",
             target_url: process.env.RUN_URL,
             context: context.payload.action,
           })
