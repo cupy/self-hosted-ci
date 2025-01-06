@@ -78,6 +78,9 @@ jobs:
     - name: Test
       id: test
       run: |
+        # TODO(kmaehashi): Set PULL_REQUEST id from payload
+        export PULL_REQUEST="${{ github.event_name == 'workflow_dispatch && '' || '9999' }}"
+        export CACHE_DIR="/home/actions-runner/cache/cupy/self-hosted-ci"
         ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" build test
 
     # Regenerate the token as the installation token expires in an hour.
