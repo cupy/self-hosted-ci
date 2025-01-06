@@ -1,5 +1,13 @@
 name: Self-Hosted CI
 on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        required: true
+        default: 'main'
+      action:
+        required: true
+        default: 'rocm-6-2'
   repository_dispatch:
 
 env:
@@ -11,10 +19,22 @@ jobs:
     runs-on: pg01-rocm
     env:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
-      RUN_TRIGGER: ${{ github.event.payload.client_payload.url }}
-      RUN_ACTION: ${{ github.event.action }}
-      SOURCE_REF: ${{ github.event.client_payload.head_sha }}
-      SOURCE_CHECKOUT_REF: ${{ github.event.client_payload.merge_commit_sha || github.event.client_payload.head_sha }}
+      RUN_TRIGGER: ${{
+          github.event_name == 'workflow_dispatch' && 'manual workflow dispatch' ||
+          github.event.payload.client_payload.url
+        }}
+      RUN_ACTION: ${{
+          github.event_name == 'workflow_dispatch' && inputs.action ||
+          github.event.action
+        }}
+      SOURCE_STATUS_REF: ${{
+          github.event_name == 'workflow_dispatch' && '' ||
+          github.event.client_payload.head_sha
+        }}
+      SOURCE_CHECKOUT_REF: ${{
+          github.event_name == 'workflow_dispatch' && inputs.ref ||
+          ( github.event.client_payload.merge_commit_sha || github.event.client_payload.head_sha )
+        }}
     steps:
     - name: Information
       uses: actions/github-script@v7
@@ -24,6 +44,7 @@ jobs:
 
     - name: Generate Token (Pre)
       id: generate-token-pre
+      if: ${{ env.SOURCE_STATUS_REF != '' }}
       uses: actions/create-github-app-token@v1
       with:
         app-id: ${{ vars.GH_APP_SELF_HOSTED_CI_ID }}
@@ -32,6 +53,7 @@ jobs:
         repositories: ${{ env.SOURCE_REPO_NAME }}
 
     - name: Update Commit Status (Pre)
+      if: ${{ env.SOURCE_STATUS_REF != '' }}
       uses: actions/github-script@v7
       with:
         github-token: ${{ steps.generate-token-pre.outputs.token }}
@@ -39,7 +61,7 @@ jobs:
           await github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
-            sha: process.env.SOURCE_REF,
+            sha: process.env.SOURCE_STATUS_REF,
             state: 'pending',
             description: 'In progress',
             target_url: process.env.RUN_URL,
@@ -60,7 +82,7 @@ jobs:
 
     # Regenerate the token as the installation token expires in an hour.
     - name: Generate Token (Post)
-      if: ${{ always() }}
+      if: ${{ always() && env.SOURCE_STATUS_REF != '' }}
       id: generate-token-post
       uses: actions/create-github-app-token@v1
       with:
@@ -71,14 +93,14 @@ jobs:
 
     - name: Update Commit Status (Post)
       uses: actions/github-script@v7
-      if: ${{ always() }}
+      if: ${{ always() && env.SOURCE_STATUS_REF != '' }}
       with:
         github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
           await github.rest.repos.createCommitStatus({
             owner: process.env.SOURCE_REPO_OWNER,
             repo: process.env.SOURCE_REPO_NAME,
-            sha: process.env.SOURCE_REF,
+            sha: process.env.SOURCE_STATUS_REF,
             state: "${{ steps.test.outcome == 'success' && 'success' || 'failure' }}",
             description: "${{ steps.test.outcome == 'success' && 'Successful' || 'Failed' }}",
             target_url: process.env.RUN_URL,
