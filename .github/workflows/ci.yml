@@ -43,8 +43,8 @@ jobs:
           core.info(`Triggered by: ${ process.env.RUN_TRIGGER }`);
 
     - name: Generate Token (Pre)
-      id: generate-token-pre
       if: ${{ env.SOURCE_STATUS_REF != '' }}
+      id: generate-token-pre
       uses: actions/create-github-app-token@v1
       with:
         app-id: ${{ vars.GH_APP_SELF_HOSTED_CI_ID }}
@@ -96,8 +96,8 @@ jobs:
         repositories: ${{ env.SOURCE_REPO_NAME }}
 
     - name: Update Commit Status (Post)
-      uses: actions/github-script@v7
       if: ${{ always() && env.SOURCE_STATUS_REF != '' }}
+      uses: actions/github-script@v7
       with:
         github-token: ${{ steps.generate-token-post.outputs.token }}
         script: |
