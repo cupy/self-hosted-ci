@@ -75,6 +75,10 @@ jobs:
         ref: ${{ env.SOURCE_CHECKOUT_REF }}
         submodules: recursive
 
+    - name: Build Docker Image
+      run: |
+        ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" build
+
     - name: Test
       id: test
       env:
@@ -82,7 +86,7 @@ jobs:
         PULL_REQUEST: ${{ github.event_name == 'workflow_dispatch' && '' || '9999' }}
         CACHE_DIR: '/home/actions-runner/cache/cupy/self-hosted-ci'
       run: |
-        ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" build test
+        ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" test
 
     # Regenerate the token as the installation token expires in an hour.
     - name: Generate Token (Post)
