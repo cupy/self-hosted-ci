@@ -21,7 +21,7 @@ jobs:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       RUN_TRIGGER: ${{
           github.event_name == 'workflow_dispatch' && 'manual workflow dispatch' ||
-          github.event.payload.client_payload.url
+          github.event.client_payload.url
         }}
       RUN_ACTION: ${{
           github.event_name == 'workflow_dispatch' && inputs.action ||
