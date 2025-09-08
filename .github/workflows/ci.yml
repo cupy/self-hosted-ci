@@ -21,8 +21,8 @@ jobs:
     strategy:
       matrix:
         target: ${{ fromJSON(
-          (github.event_name == 'workflow_dispatch' && inputs || github.event.client_payload).targets
-        ) }}
+            (github.event_name == 'workflow_dispatch' && inputs || github.event.client_payload).targets
+          ) }}
     env:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       RUN_TRIGGER: ${{
