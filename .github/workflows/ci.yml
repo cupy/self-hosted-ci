@@ -5,10 +5,11 @@ on:
       ref:
         required: true
         default: 'main'
-      action:
+      targets:
         required: true
-        default: 'rocm-6-2'
+        default: '["rocm-6-2"]'
   repository_dispatch:
+    types: [ci-linux]
 
 env:
   SOURCE_REPO_OWNER: 'cupy'
@@ -17,16 +18,18 @@ env:
 jobs:
   test:
     runs-on: pg01-rocm
+    strategy:
+      matrix:
+        target: ${{ fromJSON(
+          (github.event_name == 'workflow_dispatch' && inputs || github.event.client_payload).targets
+        ) }}
     env:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       RUN_TRIGGER: ${{
           github.event_name == 'workflow_dispatch' && 'manual workflow dispatch' ||
           github.event.client_payload.url
         }}
-      RUN_ACTION: ${{
-          github.event_name == 'workflow_dispatch' && inputs.action ||
-          github.event.action
-        }}
+      RUN_TARGET: ${{ matrix.target }}
       SOURCE_STATUS_REF: ${{
           github.event_name == 'workflow_dispatch' && '' ||
           github.event.client_payload.head_sha
@@ -65,7 +68,7 @@ jobs:
             state: 'pending',
             description: 'In progress',
             target_url: process.env.RUN_URL,
-            context: process.env.RUN_ACTION,
+            context: process.env.RUN_TARGET,
           })
 
     - name: Checkout
@@ -77,16 +80,15 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" build
+        ./.pfnci/linux/run.sh "${{ env.RUN_TARGET }}" build
 
     - name: Test
       id: test
       env:
-        # TODO(kmaehashi): Set PULL_REQUEST number from payload
-        PULL_REQUEST: ${{ github.event_name == 'workflow_dispatch' && '' || '9999' }}
+        PULL_REQUEST: ${{ github.event_name == 'workflow_dispatch' && '' || github.event.client_payload.pull_request }}
         CACHE_DIR: '/home/actions-runner/cache/cupy/self-hosted-ci'
       run: |
-        ./.pfnci/linux/run.sh "${{ env.RUN_ACTION }}" test
+        ./.pfnci/linux/run.sh "${{ env.RUN_TARGET }}" test
 
     # Regenerate the token as the installation token expires in an hour.
     - name: Generate Token (Post)
@@ -112,5 +114,5 @@ jobs:
             state: "${{ steps.test.outcome == 'success' && 'success' || 'failure' }}",
             description: "${{ steps.test.outcome == 'success' && 'Successful' || 'Failed' }}",
             target_url: process.env.RUN_URL,
-            context: process.env.RUN_ACTION,
+            context: process.env.RUN_TARGET,
           })
