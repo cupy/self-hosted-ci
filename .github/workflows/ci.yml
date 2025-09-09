@@ -27,7 +27,13 @@ jobs:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       RUN_TRIGGER: ${{
           github.event_name == 'workflow_dispatch' && 'manual workflow dispatch' ||
-          github.event.client_payload.url
+          format('{0}/{1}/{2}/pull/{3} ({4})',
+                 github.server_url,
+                 'cupy',
+                 'cupy',
+                 github.event.client_payload.pull_request,
+                 github.event.client_payload.url
+          )
         }}
       RUN_TARGET: ${{ matrix.target }}
       SOURCE_STATUS_REF: ${{
@@ -43,7 +49,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          core.info(`Triggered by: ${ process.env.RUN_TRIGGER }`);
+          core.notice(`Triggered by: ${ process.env.RUN_TRIGGER }`);
 
     - name: Generate Token (Pre)
       if: ${{ env.SOURCE_STATUS_REF != '' }}
