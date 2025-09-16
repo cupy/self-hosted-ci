@@ -7,7 +7,7 @@ on:
         default: 'main'
       targets:
         required: true
-        default: '["rocm-6-2"]'
+        default: '["rocm-6-4"]'
   repository_dispatch:
     types: [ci-linux]
 
