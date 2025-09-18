@@ -20,9 +20,9 @@ jobs:
     runs-on: pg01-rocm
     strategy:
       matrix:
-        target: ${{ fromJSON(
-            (github.event_name == 'workflow_dispatch' && inputs || github.event.client_payload).targets
-          ) }}
+        target: ${{
+            github.event_name == 'workflow_dispatch' && fromJSON(inputs.targets) || github.event.client_payload.targets
+          }}
     env:
       RUN_URL: '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
       RUN_TRIGGER: ${{
